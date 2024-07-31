@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -73,9 +74,7 @@ fun MainScreen(onAnimationEnd: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(lightYellow, mediumYellow, darkYellow)
-                )
+                Color.White
             )
     ) {
         Column {
@@ -84,7 +83,7 @@ fun MainScreen(onAnimationEnd: () -> Unit) {
                 text = "Better Commute",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 32.dp)
+                    .padding(top = 32.dp, start = 8.dp)
                     .align(Alignment.CenterHorizontally),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
@@ -112,7 +111,7 @@ fun IntroScreen(onAnimationEnd: () -> Unit) {
     )
 
     LaunchedEffect(Unit) {
-        delay(5000)
+        delay(2000)
         onAnimationEnd()
     }
 
