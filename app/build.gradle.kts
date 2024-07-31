@@ -53,6 +53,7 @@ android {
 
 dependencies {
     implementation("com.google.firebase:firebase-auth:23.0.0")
+    implementation("com.google.firebase:firebase-database:21.0.0")
     val composeBom = platform("androidx.compose:compose-bom:2023.10.01")
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -70,14 +71,19 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.maps.android:maps-compose:4.1.1")
-
+    implementation("com.google.android.libraries.places:places:3.3.0")
+    implementation("com.google.maps:google-maps-services:2.2.0")
+    implementation("org.slf4j:slf4j-simple:1.7.32")
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
 
+
+    implementation("io.coil-kt:coil-compose:2.4.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
