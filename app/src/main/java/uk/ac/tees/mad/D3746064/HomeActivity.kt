@@ -1,8 +1,10 @@
 package uk.ac.tees.mad.D3746064
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Parcelable
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -47,6 +49,7 @@ import androidx.compose.material.icons.filled.Search
 import coil.compose.AsyncImage
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.parcelize.Parcelize
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.roundToInt
@@ -61,6 +64,7 @@ data class RouteInfo(
     val polyline: List<LatLng>,
     val distanceInKm: Double
 )
+
 
 class HomeActivity : ComponentActivity() {
     private lateinit var placesClient: PlacesClient
@@ -90,9 +94,6 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
-
-
-
     private fun getApiKey(): String {
         val applicationInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
         return applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
@@ -112,6 +113,7 @@ class HomeActivity : ComponentActivity() {
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(placesClient: PlacesClient, geoApiContext: GeoApiContext) {
@@ -130,6 +132,7 @@ fun HomeScreen(placesClient: PlacesClient, geoApiContext: GeoApiContext) {
     }
 
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // Fetch car types from Firebase
     LaunchedEffect(Unit) {
@@ -206,6 +209,7 @@ fun HomeScreen(placesClient: PlacesClient, geoApiContext: GeoApiContext) {
                                                 cameraPositionState.position = CameraPosition.fromLatLngZoom(latLng, 15f)
                                             }
                                             routeInfo = null // Clear existing route
+                                            selectedCar = null // Clear selected car
                                         }
                                     }
                             )
@@ -249,6 +253,7 @@ fun HomeScreen(placesClient: PlacesClient, geoApiContext: GeoApiContext) {
                                                     .build()
                                                 cameraPositionState.move(CameraUpdateFactory.newLatLngBounds(bounds, 100))
                                             }
+                                            selectedCar = null // Clear selected car
                                         }
                                     }
                             )
@@ -276,17 +281,33 @@ fun HomeScreen(placesClient: PlacesClient, geoApiContext: GeoApiContext) {
                 }
             }
 
-            Button(
-                onClick = { /* TODO: Implement booking logic */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text("BOOK NOW")
-            }
+       
+                Button(
+                    onClick = {
+                        val totalPrice = (selectedCar!!.pricePerKm * routeInfo!!.distanceInKm).roundToInt()
+                        val bookingDetails = BookingDetails(
+                            fromLocation = fromLocation,
+                            toLocation = toLocation,
+                            carType = selectedCar!!.type,
+                            distance = routeInfo!!.distanceInKm,
+                            totalPrice = totalPrice
+                        )
+                        val intent = Intent(context, BookingConfirmationActivity::class.java).apply {
+                            putExtra("BOOKING_DETAILS", bookingDetails)
+                        }
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text("BOOK NOW")
+                }
+
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarCard(carType: CarType, isSelected: Boolean, onSelect: () -> Unit, routeDistance: Double?) {
@@ -327,7 +348,6 @@ fun CarCard(carType: CarType, isSelected: Boolean, onSelect: () -> Unit, routeDi
     }
 }
 
-
 suspend fun fetchCarTypes(): List<CarType> {
     val database = FirebaseDatabase.getInstance()
     val carTypesRef = database.getReference("car_types")
@@ -354,6 +374,8 @@ suspend fun getPlacePredictions(placesClient: PlacesClient, query: String): List
         }
     }
 }
+
+// ... (previous code remains the same)
 
 suspend fun getPlaceLatLng(placesClient: PlacesClient, placeId: String): LatLng? {
     val placeFields = listOf(Place.Field.LAT_LNG)
@@ -389,6 +411,55 @@ suspend fun getRoute(geoApiContext: GeoApiContext, origin: LatLng, destination: 
         } catch (e: Exception) {
             e.printStackTrace()
             RouteInfo(emptyList(), 0.0)
+        }
+    }
+}
+
+
+@Parcelize
+data class BookingDetails(
+    val fromLocation: String,
+    val toLocation: String,
+    val carType: String,
+    val distance: Double,
+    val totalPrice: Int
+) : Parcelable
+
+class BookingConfirmationActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val bookingDetails = intent.getParcelableExtra<BookingDetails>("BOOKING_DETAILS")
+
+        setContent {
+            BookingConfirmationScreen(bookingDetails)
+        }
+    }
+}
+
+@Composable
+fun BookingConfirmationScreen(bookingDetails: BookingDetails?) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text("Booking Confirmation", style = MaterialTheme.typography.headlineMedium)
+
+        bookingDetails?.let { details ->
+            Text("From: ${details.fromLocation}")
+            Text("To: ${details.toLocation}")
+            Text("Car Type: ${details.carType}")
+            Text("Distance: ${String.format("%.2f", details.distance)} km")
+            Text("Total Price: $${details.totalPrice}")
+        } ?: Text("Booking details not available")
+
+        Button(
+            onClick = { /* TODO: Implement final booking logic */ },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Confirm Booking")
         }
     }
 }
