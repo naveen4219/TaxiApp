@@ -281,28 +281,35 @@ fun HomeScreen(placesClient: PlacesClient, geoApiContext: GeoApiContext) {
                 }
             }
 
-       
-                Button(
-                    onClick = {
+            Button(
+                onClick = {
+                    if (selectedCar != null && routeInfo != null && fromLatLng != null && toLatLng != null) {
                         val totalPrice = (selectedCar!!.pricePerKm * routeInfo!!.distanceInKm).roundToInt()
                         val bookingDetails = BookingDetails(
                             fromLocation = fromLocation,
                             toLocation = toLocation,
+                            fromLat = fromLatLng!!.latitude,
+                            fromLng = fromLatLng!!.longitude,
+                            toLat = toLatLng!!.latitude,
+                            toLng = toLatLng!!.longitude,
                             carType = selectedCar!!.type,
                             distance = routeInfo!!.distanceInKm,
+                            pricePerKm = selectedCar!!.pricePerKm,
                             totalPrice = totalPrice
                         )
                         val intent = Intent(context, BookingConfirmationActivity::class.java).apply {
                             putExtra("BOOKING_DETAILS", bookingDetails)
                         }
                         context.startActivity(intent)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text("BOOK NOW")
-                }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                enabled = selectedCar != null && routeInfo != null && fromLatLng != null && toLatLng != null
+            ) {
+                Text("BOOK NOW")
+            }
 
         }
     }
@@ -342,7 +349,7 @@ fun CarCard(carType: CarType, isSelected: Boolean, onSelect: () -> Unit, routeDi
             Text(carType.type, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             Text("$${carType.pricePerKm}/km", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             if (totalPrice != null) {
-                Text("Total: $$totalPrice", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Green)
+                Text("Total: $$totalPrice", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             }
         }
     }
@@ -420,46 +427,15 @@ suspend fun getRoute(geoApiContext: GeoApiContext, origin: LatLng, destination: 
 data class BookingDetails(
     val fromLocation: String,
     val toLocation: String,
+    val fromLat: Double,
+    val fromLng: Double,
+    val toLat: Double,
+    val toLng: Double,
     val carType: String,
     val distance: Double,
+    val pricePerKm: Double,
     val totalPrice: Int
 ) : Parcelable
 
-class BookingConfirmationActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
 
-        val bookingDetails = intent.getParcelableExtra<BookingDetails>("BOOKING_DETAILS")
 
-        setContent {
-            BookingConfirmationScreen(bookingDetails)
-        }
-    }
-}
-
-@Composable
-fun BookingConfirmationScreen(bookingDetails: BookingDetails?) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text("Booking Confirmation", style = MaterialTheme.typography.headlineMedium)
-
-        bookingDetails?.let { details ->
-            Text("From: ${details.fromLocation}")
-            Text("To: ${details.toLocation}")
-            Text("Car Type: ${details.carType}")
-            Text("Distance: ${String.format("%.2f", details.distance)} km")
-            Text("Total Price: $${details.totalPrice}")
-        } ?: Text("Booking details not available")
-
-        Button(
-            onClick = { /* TODO: Implement final booking logic */ },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("Confirm Booking")
-        }
-    }
-}
